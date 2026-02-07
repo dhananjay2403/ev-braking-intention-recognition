@@ -38,3 +38,9 @@ dist/
 
 # Ignore generated dataset files
 data/*.npy
+
+# Ignore model weights and checkpoints
+*.pth
+*.pt
+models/*.pth
+models/*.pt
