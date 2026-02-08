@@ -1,13 +1,13 @@
 '''
     Data Generator
 
-    We want to generate synthetic driving + braking behavior that looks realistic enough for ML.
+    We want to generate synthetic driving + braking behavior.
 
     Each sample will represent:
 
     “The last 1.5 seconds of driving → what kind of braking is happening?”
 
-    Signals we generate (same spirit as the Springer paper, but simpler):
+    Signals we generate:
 
     At every time step:
         - speed (m/s)
@@ -27,7 +27,7 @@
 
 
 '''
-    Dataset design recap (important, but short)
+    Dataset design:
 
     - Sampling rate: 50 Hz
     - Window length: 1.5 seconds
@@ -47,9 +47,8 @@
 
 import numpy as np
 
-# -------------------------------
+
 # Global configuration
-# -------------------------------
 
 SAMPLING_RATE = 50        # Hz
 WINDOW_SECONDS = 1.5
@@ -62,25 +61,21 @@ NOISE_STD_BRAKE = 0.03
 np.random.seed(42)  # reproducibility
 
 
-# -------------------------------
 # Helper functions
-# -------------------------------
 
 def add_noise(signal, std):
-    """Add small Gaussian noise to make data realistic."""
+    
+    # Add small Gaussian noise to make data realistic
     return signal + np.random.normal(0, std, size=signal.shape)
 
 
+# Generate ONE braking event (continuous signal), from which we will extract one window.
 def generate_braking_event(brake_type):
-    """
-    Generate ONE braking event (continuous signal),
-    from which we will extract one window.
-    """
 
     t = np.linspace(0, WINDOW_SECONDS, WINDOW_SIZE)
 
     # Initial speed (random but realistic)
-    v0 = np.random.uniform(15, 25)  # m/s (~54–90 km/h)
+    v0 = np.random.uniform(15, 25)      # m/s (~54–90 km/h)
 
     if brake_type == "light":
         decel = np.random.uniform(0.5, 1.5)
@@ -117,9 +112,7 @@ def generate_braking_event(brake_type):
     return sample
 
 
-# -------------------------------
 # Dataset generation
-# -------------------------------
 
 def generate_dataset():
     X = []
@@ -145,9 +138,7 @@ def generate_dataset():
     return X, y
 
 
-# -------------------------------
 # Train / Val / Test split
-# -------------------------------
 
 def split_dataset(X, y, train_ratio=0.7, val_ratio=0.15):
     indices = np.arange(len(X))
@@ -162,8 +153,8 @@ def split_dataset(X, y, train_ratio=0.7, val_ratio=0.15):
     X_train = X[:n_train]
     y_train = y[:n_train]
 
-    X_val = X[n_train:n_train + n_val]
-    y_val = y[n_train:n_train + n_val]
+    X_val = X[n_train : n_train + n_val]
+    y_val = y[n_train : n_train + n_val]
 
     X_test = X[n_train + n_val:]
     y_test = y[n_train + n_val:]
@@ -171,11 +162,8 @@ def split_dataset(X, y, train_ratio=0.7, val_ratio=0.15):
     return X_train, y_train, X_val, y_val, X_test, y_test
 
 
-# -------------------------------
-# Main
-# -------------------------------
-
 if __name__ == "__main__":
+
     print("Generating dataset...")
     X, y = generate_dataset()
 
@@ -190,7 +178,6 @@ if __name__ == "__main__":
     np.save("data/X_test.npy", X_test)
     np.save("data/y_test.npy", y_test)
 
-    print("Done!")
     print("Shapes:")
     print("X_train:", X_train.shape)
     print("y_train:", y_train.shape)
