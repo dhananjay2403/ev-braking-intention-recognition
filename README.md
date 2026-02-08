@@ -58,7 +58,10 @@ All experiments were conducted on a **HARD synthetic dataset** specifically desi
 | Baseline (Single-task) | 69.6% | 70% | ~59% | ~78% |
 | AE + Classifier (Best) | 64.1% | 64% | ~56% | ~77% |
 | Multitask (λ = 0.5) | 69.0% | 70% | ~57% | ~77% |
-| **Multitask (λ = 0.8)** | **71.0%** | **72%** | **60%** | **82%** |
+| **Multitask (λ = 0.8)** | **71.3%** | **72%** | **59%** | **82%** |
+
+
+Note: Minor variations in accuracy across retraining runs are expected due to random initialization and stochastic optimization. The multitask model consistently outperformed single-task and autoencoder-based approaches, particularly on the safety-critical emergency braking class.
 
 ---
 
