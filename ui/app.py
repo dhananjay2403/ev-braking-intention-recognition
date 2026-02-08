@@ -7,24 +7,12 @@ import streamlit as st
 import numpy as np
 import torch
 import matplotlib.pyplot as plt
+import io
 import json
-from datetime import datetime
 
 
-
-# Different Scenario Presets
-SCENARIO_PRESETS = {
-    "Manual (Custom)": None,
-    "City Light Brake": (40, 0.25, 0.05),
-    "Highway Gentle Slowdown": (90, 0.35, 0.05),
-    "Sudden Emergency Brake": (80, 0.85, 0.10),
-    "Stop-and-Go Traffic": (35, 0.55, 0.08),
-    "Aggressive Driver": (70, 0.75, 0.12),
-}
-
-
-# Synthetic Data Generator
-def generate_sequence(seq_len=75, init_speed=60, aggressiveness=0.5, noise_level=0.05):
+# Synthetic data generator
+def generate_sequence(seq_len = 75, init_speed = 60, aggressiveness = 0.5, noise_level = 0.05):
     speed = init_speed
     brake = 0.0
     data = []
@@ -45,23 +33,33 @@ def generate_sequence(seq_len=75, init_speed=60, aggressiveness=0.5, noise_level
     return np.array(data)
 
 
-# Load Model
+# Different Scenario presets
+SCENARIOS = {
+    "Manual (use sliders)": None,
+    "Highway Gentle Slowdown": (90, 0.18, 0.05),
+    "City Traffic Braking": (50, 0.45, 0.08),
+    "Sudden Emergency Stop": (80, 0.9, 0.04),
+    "Stop-and-Go Traffic": (40, 0.6, 0.12),
+}
+
+
+# Load model
 @st.cache_resource
 def load_model():
     from models.multitask_lstm_cnn_attention import MultitaskLSTMCNNAttention
     model = MultitaskLSTMCNNAttention()
     model.load_state_dict(
-        torch.load("models/final_multitask_model.pth", map_location="cpu")
+        torch.load("models/final_multitask_model.pth", map_location = "cpu")
     )
     model.eval()
     return model
 
 
-# Page Config
+# Page config
 st.set_page_config(page_title="Braking Intention Prediction", layout="wide")
 
 
-# Title (Centered)
+# Title
 st.markdown(
     """
     <h1 style="text-align:center;">Braking Intention Prediction</h1>
@@ -73,15 +71,14 @@ st.markdown(
 )
 
 
-# Top Information Dropdowns
+# Top explainers
 c1, c2, c3 = st.columns(3)
 
 with c1:
     with st.expander("What does this app do?"):
         st.write(
-            "This application predicts **driver braking intention** "
-            "(Light, Normal, Emergency) and **brake intensity** "
-            "using a deep learning model trained on vehicle time-series data."
+            "Predicts **driver braking intention** (Light / Normal / Emergency) "
+            "and **brake intensity** using a deep learning model."
         )
 
 with c2:
@@ -89,73 +86,76 @@ with c2:
         st.write(
             "- Vehicle speed\n"
             "- Acceleration (deceleration)\n"
-            "- Brake pedal input\n\n"
-            "These signals simulate realistic braking behavior over time."
+            "- Brake pedal input"
         )
 
 with c3:
     with st.expander("How to interpret results?"):
         st.write(
-            "- 🟢 **Light Braking**: Low risk\n"
-            "- 🟡 **Normal Braking**: Moderate braking\n"
-            "- 🔴 **Emergency Braking**: Sudden / high-risk braking"
+            "- 🟢 Light: Low risk\n"
+            "- 🟡 Normal: Moderate braking\n"
+            "- 🔴 Emergency: Sudden / high-risk braking"
         )
 
 st.divider()
 
 
-# Scenario Preset Selector
-st.subheader("Scenario Preset")
+# Scenario & Controls section
+st.subheader("Scenario & Controls")
 
-selected_scenario = st.selectbox(
-    "Choose a predefined driving scenario (or use Manual for sliders):",
-    options=list(SCENARIO_PRESETS.keys())
-)
+sc_col, sliders_col, run_col = st.columns([1.1, 2.1, 0.8])
 
-if selected_scenario != "Manual (Custom)":
-    default_speed, default_aggr, default_noise = SCENARIO_PRESETS[selected_scenario]
-else:
-    default_speed, default_aggr, default_noise = 48, 0.5, 0.05
+with sc_col:
+    st.markdown("### 🚦 Scenario Preset")
+    scenario = st.selectbox(
+        "Choose a predefined driving scenario:",
+        list(SCENARIOS.keys())
+    )
 
+    if SCENARIOS[scenario]:
+        init_speed, aggressiveness, noise_level = SCENARIOS[scenario]
+    else:
+        init_speed = aggressiveness = noise_level = None
 
-# Input Controls
-st.subheader("Input Controls")
+with sliders_col:
+    st.markdown("### 🎛️ Input Controls")
 
-ic1, ic2, ic3, ic4 = st.columns([1, 1, 1, 0.8])
-
-with ic1:
     init_speed = st.slider(
-        "Initial Speed (km/h)", 20, 120, int(default_speed)
+        "Initial Speed (km/h)", 20, 120,
+        init_speed if init_speed is not None else 60
     )
 
-with ic2:
     aggressiveness = st.slider(
-        "Braking Aggressiveness", 0.1, 1.0, float(default_aggr)
+        "Braking Aggressiveness", 0.1, 1.0,
+        aggressiveness if aggressiveness is not None else 0.5
     )
 
-with ic3:
     noise_level = st.slider(
-        "Noise Level", 0.0, 0.2, float(default_noise)
+        "Noise Level", 0.0, 0.2,
+        noise_level if noise_level is not None else 0.05
     )
 
-with ic4:
-    st.markdown("<br>", unsafe_allow_html=True)
-    run = st.button("Run Prediction", use_container_width=True)
+with run_col:
+    st.markdown("<br><br>", unsafe_allow_html=True)
+    run = st.button(
+        "🚀 Run Prediction",
+        use_container_width=True
+    )
 
 st.divider()
 
 
-# Main Layout
-left, right = st.columns([1.5, 1])
+# Main layout
+left, right = st.columns([1.6, 1])
 
 if run:
     sequence = generate_sequence(
-        init_speed=init_speed,
-        aggressiveness=aggressiveness,
-        noise_level=noise_level
+        init_speed = init_speed,
+        aggressiveness = aggressiveness,
+        noise_level = noise_level
     )
 
-    # LEFT: Time-Series Plots
+    # LEFT: Time-series plots
     with left:
         st.subheader("Input Time-Series Signals")
 
@@ -175,13 +175,6 @@ if run:
             ax.grid(alpha=0.3)
 
         st.pyplot(fig)
-
-        with st.expander("What do these signals indicate?"):
-            st.write(
-                "- **Speed** decreases gradually, indicating sustained braking.\n"
-                "- **Acceleration** remains negative, confirming deceleration.\n"
-                "- **Brake pedal** input increases and stabilizes, reflecting driver intent."
-            )
 
     # RIGHT: Predictions
     with right:
@@ -204,28 +197,27 @@ if run:
             f"""
             <div style="
                 background:{colors[pred]};
-                padding:20px;
-                border-radius:12px;
-                text-align:center;
-                font-size:22px;
-                font-weight:bold;">
+                padding : 20px;
+                border-radius : 14px;
+                text-align : center;
+                font-size : 22px;
+                font-weight : bold;">
                 {emojis[pred]} {classes[pred]}
             </div>
             """,
             unsafe_allow_html=True
         )
 
-        st.markdown("<br>", unsafe_allow_html=True)
+        st.markdown("<br>", unsafe_allow_html = True)
         st.metric("Predicted Brake Intensity", f"{intensity.item():.2f}")
 
-        # Pie Chart
+        # Pie chart
         fig2, ax2 = plt.subplots()
-
         wedges, _, _ = ax2.pie(
             probs,
-            autopct="%1.0f%%",
-            startangle=90,
-            colors=colors
+            autopct = "%1.0f%%",
+            startangle = 90,
+            colors = colors
         )
 
         ax2.legend(
@@ -239,28 +231,42 @@ if run:
         ax2.axis("equal")
         st.pyplot(fig2)
 
-        # Export Prediction
+
+        # Interpretation dropdown
+        with st.expander("🔍 Interpretation"):
+            if pred == 0:
+                st.write(
+                    "Smooth speed reduction with low brake input. "
+                    "Indicates controlled and low-risk braking."
+                )
+            elif pred == 1:
+                st.write(
+                    "Moderate deceleration with noticeable brake engagement. "
+                    "Common in city or traffic conditions."
+                )
+            else:
+                st.write(
+                    "Rapid braking response with high intensity. "
+                    "Represents a safety-critical situation."
+                )
+
+        # Download report
         report = {
-            "timestamp": datetime.now().isoformat(),
-            "scenario": selected_scenario,
-            "inputs": {
-                "initial_speed_kmh": init_speed,
-                "braking_aggressiveness": aggressiveness,
-                "noise_level": noise_level,
-            },
-            "prediction": {
-                "braking_intention": classes[pred],
-                "brake_intensity": float(intensity.item()),
-                "class_probabilities": {
-                    classes[i]: float(probs[i]) for i in range(3)
-                }
-            }
+            "scenario": scenario,
+            "initial_speed": init_speed,
+            "aggressiveness": aggressiveness,
+            "noise_level": noise_level,
+            "prediction": classes[pred],
+            "brake_intensity": round(float(intensity.item()), 3),
+            "class_probabilities": dict(zip(classes, probs.round(3).tolist()))
         }
 
-        st.download_button(
-            label="📥 Download Prediction Report",
-            data=json.dumps(report, indent=4),
-            file_name="braking_prediction_report.json",
-            mime="application/json"
-        )
+        buffer = io.StringIO()
+        json.dump(report, buffer, indent=2)
 
+        st.download_button(
+            "📥 Download Prediction Report",
+            buffer.getvalue(),
+            file_name = "braking_prediction_report.json",
+            mime = "application/json"
+        )
