@@ -44,3 +44,5 @@ data/*.npy
 *.pt
 models/*.pth
 models/*.pt
+
+interview-questions.txt

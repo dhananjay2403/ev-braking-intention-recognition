@@ -14,6 +14,9 @@ scikit-learn>=1.2
 matplotlib>=3.7
 seaborn>=0.12
 
+# UI plotting
+matplotlib>=3.7
+
 # Progress bars & logging
 tqdm>=4.65
 
@@ -21,3 +24,5 @@ tqdm>=4.65
 jupyter>=1.0
 notebook>=6.5
 ipykernel>=6.25
+
+streamlit>=1.28

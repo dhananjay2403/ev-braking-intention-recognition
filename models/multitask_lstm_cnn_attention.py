@@ -10,29 +10,29 @@ class Attention(nn.Module):
 
     def forward(self, x):
         # x: (batch, seq_len, hidden_dim)
-        weights = torch.softmax(self.attn(x), dim=1)
-        context = torch.sum(weights * x, dim=1)
+        weights = torch.softmax(self.attn(x), dim = 1)
+        context = torch.sum(weights * x, dim = 1)
         return context
 
 
 class MultitaskLSTMCNNAttention(nn.Module):
 
-    def __init__(self, input_dim=3, cnn_channels=32, lstm_hidden=64):
+    def __init__(self, input_dim = 3, cnn_channels = 32, lstm_hidden = 64):
         super().__init__()
 
         # Temporal CNN
         self.cnn = nn.Sequential(
-            nn.Conv1d(input_dim, cnn_channels, kernel_size=3, padding=1),
+            nn.Conv1d(input_dim, cnn_channels, kernel_size = 3, padding = 1),
             nn.ReLU(),
-            nn.Conv1d(cnn_channels, cnn_channels, kernel_size=3, padding=1),
+            nn.Conv1d(cnn_channels, cnn_channels, kernel_size = 3, padding = 1),
             nn.ReLU()
         )
 
         # LSTM
         self.lstm = nn.LSTM(
-            input_size=cnn_channels,
-            hidden_size=lstm_hidden,
-            batch_first=True
+            input_size = cnn_channels,
+            hidden_size = lstm_hidden,
+            batch_first = True
         )
 
         # Attention
