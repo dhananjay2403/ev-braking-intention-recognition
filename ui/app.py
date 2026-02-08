@@ -1,23 +1,23 @@
+# Ensure project root is in sys.path for module imports
+import sys
+import os
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+
 import streamlit as st
 import numpy as np
 import torch
 import matplotlib.pyplot as plt
 
-from models.multitask_lstm_cnn_attention import MultitaskLSTMCNNAttention
 
 
-
-# Utility: Generate synthetic data
-def generate_sequence(seq_len = 75, init_speed = 60, aggressiveness = 0.5, noise_level = 0.05):
+# Synthetic data generator
+def generate_sequence(seq_len=75, init_speed=60, aggressiveness=0.5, noise_level=0.05):
     speed = init_speed
-    accel = 0.0
     brake = 0.0
     data = []
 
-    target_brake = np.clip(aggressiveness, 0.1, 1.0)
-
     for _ in range(seq_len):
-        brake += (target_brake - brake) * np.random.uniform(0.03, 0.08)
+        brake += (aggressiveness - brake) * np.random.uniform(0.03, 0.08)
         brake += np.random.normal(0, noise_level)
         brake = np.clip(brake, 0, 1)
 
@@ -32,156 +32,175 @@ def generate_sequence(seq_len = 75, init_speed = 60, aggressiveness = 0.5, noise
     return np.array(data)
 
 
-
 # Load model
 @st.cache_resource
 def load_model():
+    from models.multitask_lstm_cnn_attention import MultitaskLSTMCNNAttention
     model = MultitaskLSTMCNNAttention()
-    model.load_state_dict(torch.load("models/final_multitask_model.pth", map_location="cpu"))
+    model.load_state_dict(
+        torch.load("models/final_multitask_model.pth", map_location="cpu")
+    )
     model.eval()
     return model
 
 
 # Page config
-st.set_page_config(page_title = "Braking Intention Prediction", layout = "wide")
+st.set_page_config(page_title="Braking Intention Prediction", layout="wide")
 
+# Title (CENTERED)
 st.markdown(
-    "<h1 style='text-align: center;'>🚗 Braking Intention Prediction</h1>",
+    """
+    <h1 style="text-align:center;">🚗 Braking Intention Prediction</h1>
+    <p style="text-align:center; color:#b0b0b0;">
+    Predicts driver braking intention and brake intensity from vehicle time-series data.
+    </p>
+    """,
     unsafe_allow_html=True
 )
 
-st.markdown(
-    "<div style='text-align: center; color: gray; font-size: 16px;'>"
-    "Predicts driver braking intention and brake intensity from vehicle time-series data."
-    "</div>",
-    unsafe_allow_html = True
-)
 
-# Add vertical space between caption and dropdowns
-st.markdown("<div style='height: 24px;'></div>", unsafe_allow_html = True)
+# Top dropdowns
+c1, c2, c3 = st.columns(3)
 
-# Info dropdowns
-col_info1, col_info2, col_info3 = st.columns(3)
-
-with col_info1:
-    with st.expander("What does this app do?"):
+with c1:
+    with st.expander("🧠 What does this app do?"):
         st.write(
             "This application predicts **driver braking intention** "
             "(Light, Normal, Emergency) and **brake intensity** "
             "using a deep learning model trained on time-series vehicle data."
         )
 
-with col_info2:
-    with st.expander("What data is used?"):
+with c2:
+    with st.expander("📊 What data is used?"):
         st.write(
-            "The model uses synthetic time-series signals:\n"
             "- Vehicle speed\n"
-            "- Acceleration\n"
+            "- Acceleration (deceleration)\n"
             "- Brake pedal input\n\n"
-            "These simulate realistic braking behavior."
+            "These signals simulate realistic braking behavior over time."
         )
 
-with col_info3:
-    with st.expander("How to interpret results?"):
+with c3:
+    with st.expander("⚠️ How to interpret results?"):
         st.write(
-            "- **Green**: Light braking (low risk)\n"
-            "- **Yellow**: Normal braking\n"
-            "- **Red**: Emergency braking (high risk)"
+            "- 🟢 **Light Braking**: Low risk\n"
+            "- 🟡 **Normal Braking**: Moderate braking\n"
+            "- 🔴 **Emergency Braking**: Sudden / high-risk braking"
         )
 
 st.divider()
 
-
-# Input controls (MAIN PAGE)
+# Input Controls 
 st.subheader("Input Controls")
 
-col_ctrl1, col_ctrl2, col_ctrl3, col_ctrl4 = st.columns([1, 1, 1, 0.7])
+ic1, ic2, ic3, ic4 = st.columns([1, 1, 1, 0.8])
 
-with col_ctrl1:
-    init_speed = st.slider("Initial Speed (km/h)", 20, 120, 60)
+with ic1:
+    init_speed = st.slider("Initial Speed (km/h)", 20, 120, 48)
 
-with col_ctrl2:
+with ic2:
     aggressiveness = st.slider("Braking Aggressiveness", 0.1, 1.0, 0.5)
 
-with col_ctrl3:
+with ic3:
     noise_level = st.slider("Noise Level", 0.0, 0.2, 0.05)
 
-with col_ctrl4:
-    run_button = st.button("Run Prediction", use_container_width=True)
+with ic4:
+    st.markdown("<br>", unsafe_allow_html=True)
+    run = st.button("Run Prediction", use_container_width=True)
 
 st.divider()
 
+# Main layout
+left, right = st.columns([1.5, 1])
 
-# Main content layout
-left_col, right_col = st.columns([1.4, 1])
+if run:
+    sequence = generate_sequence(
+        init_speed=init_speed,
+        aggressiveness=aggressiveness,
+        noise_level=noise_level
+    )
 
-if run_button:
-    sequence = generate_sequence(init_speed=init_speed,
-                                 aggressiveness=aggressiveness,
-                                 noise_level=noise_level)
-
-    # LEFT: Graphs
-    with left_col:
+    # LEFT: Time-series plots
+    with left:
         st.subheader("Input Time-Series Signals")
 
         fig, axs = plt.subplots(3, 1, figsize=(8, 6), sharex=True)
 
-        axs[0].plot(sequence[:, 0], color="tab:blue")
+        axs[0].plot(sequence[:, 0], color="#1f77b4")
         axs[0].set_ylabel("Speed")
-        axs[0].grid(alpha=0.3)
 
-        axs[1].plot(sequence[:, 1], color="tab:orange")
+        axs[1].plot(sequence[:, 1], color="#ff7f0e")
         axs[1].set_ylabel("Acceleration")
-        axs[1].grid(alpha=0.3)
 
-        axs[2].plot(sequence[:, 2], color="tab:red")
+        axs[2].plot(sequence[:, 2], color="#d62728")
         axs[2].set_ylabel("Brake Pedal")
         axs[2].set_xlabel("Time Step")
-        axs[2].grid(alpha=0.3)
+
+        for ax in axs:
+            ax.grid(alpha=0.3)
 
         st.pyplot(fig)
 
-        with st.expander("What do these graphs mean?"):
+        with st.expander("🔍 What do these signals indicate?"):
             st.write(
-                "- **Speed** shows how the vehicle slows down over time.\n"
-                "- **Acceleration** reflects deceleration due to braking.\n"
-                "- **Brake Pedal** shows how strongly the driver presses the brake."
+                "- **Speed** decreases gradually, indicating sustained braking.\n"
+                "- **Acceleration** remains negative, confirming deceleration.\n"
+                "- **Brake pedal** input increases and stabilizes, reflecting driver intent."
             )
 
-    # RIGHT: Prediction results
-    with right_col:
+    # RIGHT: Predictions
+    with right:
         model = load_model()
         x = torch.tensor(sequence, dtype=torch.float32).unsqueeze(0)
 
         with torch.no_grad():
-            class_logits, intensity = model(x)
-            probs = torch.softmax(class_logits, dim=1).numpy()[0]
-            pred_class = probs.argmax()
-            pred_intensity = intensity.item()
+            logits, intensity = model(x)
+            probs = torch.softmax(logits, dim=1).numpy()[0]
 
-        class_names = ["Light Braking", "Normal Braking", "Emergency Braking"]
+        classes = ["Light Braking", "Normal Braking", "Emergency Braking"]
         colors = ["#2ecc71", "#f1c40f", "#e74c3c"]
+        emojis = ["🟢", "🟡", "🔴"]
+
+        pred = probs.argmax()
 
         st.subheader("Prediction Results")
 
         st.markdown(
             f"""
             <div style="
-                background-color:{colors[pred_class]};
+                background:{colors[pred]};
                 padding:20px;
-                border-radius:10px;
-                color:black;
-                font-size:22px;
+                border-radius:12px;
                 text-align:center;
+                font-size:22px;
                 font-weight:bold;">
-                {class_names[pred_class]}
+                {emojis[pred]} {classes[pred]}
             </div>
             """,
             unsafe_allow_html=True
         )
 
-        st.metric("Predicted Brake Intensity", f"{pred_intensity:.2f}")
+        # spacing between box and intensity
+        st.markdown("<br>", unsafe_allow_html=True)
 
-        st.write("### Class Probabilities")
-        for name, p in zip(class_names, probs):
-            st.write(f"- **{name}**: {p:.2f}")
+        st.metric("Predicted Brake Intensity", f"{intensity.item():.2f}")
+
+        # Pie chart (NO label overlap)
+        fig2, ax2 = plt.subplots()
+
+        wedges, _, _ = ax2.pie(
+            probs,
+            autopct="%1.0f%%",
+            startangle=90,
+            colors=colors
+        )
+
+        ax2.legend(
+            wedges,
+            classes,
+            title = "Braking Classes",
+            loc = "center left",
+            bbox_to_anchor = (1, 0.5)
+        )
+
+        ax2.axis("equal")
+        st.pyplot(fig2)
