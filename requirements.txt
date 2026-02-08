@@ -1,0 +1,23 @@
+# Core scientific stack
+numpy>=1.23
+scipy>=1.9
+pandas>=1.5
+
+# Deep learning
+torch>=2.0
+torchvision>=0.15
+
+# Machine learning utilities
+scikit-learn>=1.2
+
+# Visualization
+matplotlib>=3.7
+seaborn>=0.12
+
+# Progress bars & logging
+tqdm>=4.65
+
+# Jupyter environment (optional but recommended)
+jupyter>=1.0
+notebook>=6.5
+ipykernel>=6.25
