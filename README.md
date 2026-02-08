@@ -7,6 +7,19 @@ The project systematically evaluates and compares multiple deep learning strateg
 
 ---
 
+## 🎥 Demo
+
+Below is a short demo of the interactive Streamlit application showcasing:
+
+- Scenario presets (one-click simulations)
+- Time-series signal visualization (speed, acceleration, brake pedal)
+- Multitask prediction outputs (braking class + intensity)
+- Exportable prediction reports
+
+![Braking Intention Prediction Demo](assets/braking_intention_demo.gif)
+
+---
+
 ## Approach Summary
 
 The project was developed in four structured phases:
@@ -34,7 +47,7 @@ All experiments were conducted on a **HARD synthetic dataset** specifically desi
 
 ## Model Architecture
 
-![Braking Intention Example](img/1.jpg)
+![Braking Intention Example](assets/img/1.jpg)
 
 ---
 
@@ -64,6 +77,39 @@ All experiments were conducted on a **HARD synthetic dataset** specifically desi
 
 ---
 
+## 🧠 Assumptions & Design Choices
+
+This project is designed as a research-oriented and demo-friendly system.  
+Key assumptions made during modeling and UI design are listed below:
+
+### Data Assumptions
+- Vehicle data is **synthetically generated** to simulate realistic braking behavior.
+- Input signals (speed, acceleration, brake pedal) are assumed to be:
+  - Noise-corrupted but bounded
+  - Temporally consistent
+- Absolute physical units are simplified for modeling clarity.
+
+### Modeling Assumptions
+- Braking intention can be inferred from **short time windows** of vehicle dynamics.
+- Multitask learning (classification + regression) improves representation learning by:
+  - Providing auxiliary supervision
+  - Reducing ambiguity in overlapping braking behaviors
+- Brake intensity regression is assumed to be **continuous and monotonic** with braking aggressiveness.
+
+### UI & Demo Assumptions
+- Scenario presets are **illustrative**, not exhaustive of real-world driving cases.
+- The Streamlit interface prioritizes **interpretability and communication** over real-time deployment constraints.
+- Predictions are **advisory**, not intended for direct vehicle control.
+
+### Limitations
+- Model is trained on synthetic data; real-world deployment would require:
+  - Sensor calibration
+  - Domain adaptation
+  - Validation on real driving datasets
+- Reaction latency, road conditions, and driver intent beyond braking are not modeled.
+
+---
+ 
 ## Conclusion
 
 For ambiguous, future-dependent braking intention prediction, **multitask learning outperforms both single-task learning and autoencoder-based approaches**.  
