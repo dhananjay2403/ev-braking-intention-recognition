@@ -1,4 +1,4 @@
-# EV Braking Intention Prediction Using Deep Learning (Multitask Learning)
+# EV Braking Intention Prediction Using Deep Learning 
 
 ## Project Overview
 This project focuses on predicting **driver braking intention** (Light, Normal, Emergency) from vehicle time-series data under **ambiguous and overlapping driving scenarios**. Such prediction is critical for advanced driver-assistance systems (ADAS) and electric vehicle control, where early and reliable intent estimation improves safety and energy efficiency.
@@ -32,13 +32,13 @@ All experiments were conducted on a **HARD synthetic dataset** specifically desi
 
 ---
 
-## Model Architecture (Final)
+## Model Architecture
 
-![Braking Intention Example](../img/1.jpg)
+![Braking Intention Example](img/1.jpg)
 
 ---
 
-## Quantitative Results (HARD Test Set)
+## Quantitative Results
 
 | Model | Accuracy | Macro F1 | Normal Braking F1 | Emergency Braking F1 |
 |------|----------|----------|-------------------|----------------------|
@@ -67,13 +67,18 @@ All experiments were conducted on a **HARD synthetic dataset** specifically desi
 ## Conclusion
 
 For ambiguous, future-dependent braking intention prediction, **multitask learning outperforms both single-task learning and autoencoder-based approaches**.  
+
 Auxiliary regression of braking intensity provides meaningful, task-aligned supervision that improves generalization **without increasing model complexity**.
 
 ---
 
 ## Technologies Used
-- Python
+- LSTM
+- CNN
+- Attention
+- Autoencoder 
 - PyTorch
+- Python
 - NumPy
 - scikit-learn
 
@@ -87,48 +92,42 @@ Clone the repository and install dependencies:
 git clone https://github.com/your-username/braking-intention-prediction.git
 cd braking-intention-prediction
 pip install -r requirements.txt
+```
 
 (Optional) If using Jupyter notebooks:
+```bash
 python -m ipykernel install --user --name braking-intent
-
+```
 
 
 ---
 
-### ▶️ How to Run (ADD THIS)
-
-```markdown
 ## How to Run
 
 ### 1. Generate Dataset
 ```bash
 python data/generate_dataset.py
 python data/generate_hard_dataset.py
-
+```
 This will create .npy files containing time-series samples and labels.
 
 2. Train Baseline Model
 
 Open and run:
-
+```
 01_train_baseline.ipynb
-
+```
 3. Train Multitask Model (Final)
 
 Open and run:
-
+```
 02_multitask_training.ipynb
-
+```
 All results, confusion matrices, and metrics are produced inside the notebooks.
 
 
 ---
 
-### 📚 References (IMPORTANT – ADD THIS)
-
-This is where you cite the **baseline paper you reproduced**.
-
-```markdown
 ## References
 
 This project reproduces and extends ideas from the following research work:
