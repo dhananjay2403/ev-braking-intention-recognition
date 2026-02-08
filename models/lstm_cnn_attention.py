@@ -26,8 +26,8 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-# from models.sequence_autoencoder import SequenceAutoencoder
-from sequence_autoencoder import SequenceAutoencoder
+from models.sequence_autoencoder import SequenceAutoencoder
+# from sequence_autoencoder import SequenceAutoencoder
 
 class AttentionLayer(nn.Module):
 
@@ -153,10 +153,44 @@ class AE_LSTMCNNAttention(nn.Module):
             latent_dim = latent_dim
         )
 
-        # Freeze encoder weights
+
+        '''
+        # Freeze encoder weights (Initially)
+        for param in self.autoencoder.encoder.parameters():
+            param.requires_grad = False
+        '''
+
+        '''
+            Until now:
+                - Encoder was fully frozen
+                - That helped denoising
+                - But hurt fine-grained discrimination on HARD data
+
+            Fix:
+                - Unfreeze only the last encoder layer
+                - Allow it to adapt slightly to the classification task
+                - Keep early layers stable
+
+            This balances:
+                - robustness (AE benefit)
+                - discrimination (classifier benefit)
+        
+        '''
+
+        # Freeze all encoder layers first
         for param in self.autoencoder.encoder.parameters():
             param.requires_grad = False
 
+        # Unfreeze ONLY the last encoder layer
+        for param in self.autoencoder.encoder[-1].parameters():
+            param.requires_grad = True
+
+        '''
+            - Early layers learn generic signal structure
+            - Last layer adapts to task-specific discrimination
+            - Prevents catastrophic forgetting
+        '''
+        
         # CNN block (note input channels = latent_dim) 
         self.conv1 = nn.Conv1d(
             in_channels = latent_dim,
@@ -226,4 +260,4 @@ if __name__ == "__main__":
     dummy_input = torch.randn(2, 75, 3)
     ae_output = ae_model(dummy_input)
     print("AE+Classifier Output shape:", ae_output.shape)
-    print("AE+Classifier Output:", ae_output)
+    print("AE+Classifier Output:", ae_output)   
